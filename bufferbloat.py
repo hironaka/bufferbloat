@@ -149,10 +149,10 @@ def get_latency_stats(net):
     client = net.getNodeByName('h2')
     times = []
     start_time = time()
+    cmd = "curl -o index.html -s -w %%{time_total} %s/http/index.html" % (server.IP())
+    print cmd
     while True:
         # Calculate the amount of time to transfer webpage.
-        cmd = "curl -o index.html -s -w %%{time_total} %s/http/index.html" % (server.IP())
-        print cmd
         p = client.popen(cmd, shell=True, stdout=PIPE)
         time_total = float(p.stdout.read())
         times.append(time_total)
@@ -200,16 +200,13 @@ def bufferbloat():
     start_ping(net)
     start_webserver(net)
 
-    # TODO: measure the time it takes to complete webpage transfer
-    # from h1 to h2 (say) 3 times.  Hint: check what the following
-    # command does: curl -o /dev/null -s -w %{time_total} google.com
-    # Now use the curl command to fetch webpage from the webserver you
-    # spawned on host h1 (not from google!)
+    # Measure the time it takes to complete webpage transfer
+    # from h1 to h2 (say) 3 times.  
     mean, stdev = get_latency_stats(net)
     print "Mean latency: " + str(mean)
     print "Standard deviation of latency: " + str(stdev)
 
-    # Hint: The command below invokes a CLI which you can use to
+    # The command below invokes a CLI which you can use to
     # debug.  It allows you to run arbitrary commands inside your
     # emulated hosts h1 and h2.
     # CLI(net)
