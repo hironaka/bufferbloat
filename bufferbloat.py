@@ -206,8 +206,8 @@ def bufferbloat():
     # Now use the curl command to fetch webpage from the webserver you
     # spawned on host h1 (not from google!)
     mean, stdev = get_latency_stats(net)
-    print "Mean latency: " + mean
-    print "Standard deviation of latency: " + stdev
+    print "Mean latency: " + str(mean)
+    print "Standard deviation of latency: " + str(stdev)
 
     # Hint: The command below invokes a CLI which you can use to
     # debug.  It allows you to run arbitrary commands inside your
