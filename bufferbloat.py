@@ -140,26 +140,26 @@ def start_ping(net, outfile='ping.txt'):
 
 def get_latency_stats(net):
     print "Capturing latency..."
-		server = net.getNodeByName('h1')
-		client = net.getNodeByName('h2')
-		times = []
-		start_time = time()
-		while True:
-		    # Calculate the amount of time to transfer webpage. TODO: update 
-		    client.popen("curl -o /dev/null -s -w %{time_total} google.com")
-		    times.append(time_total)
-		    
-		    # Break out of loop after enough time has elapsed. 
-		    sleep(5)
-		    now = time()
-		    delta = now - start_time
-		    if delta > args.time:
-		        break
-		
-		# Calculate mean and standard deviation of latency.
-		mean = helper.avg(times)
-		stddev = helper.stdev(times)
-		return [mean, stdev]
+    server = net.getNodeByName('h1')
+    client = net.getNodeByName('h2')
+    times = []
+    start_time = time()
+    while True:
+        # Calculate the amount of time to transfer webpage. TODO: update 
+        client.popen("curl -o /dev/null -s -w %{time_total} google.com")
+        times.append(time_total)
+        
+        # Break out of loop after enough time has elapsed. 
+        sleep(5)
+        now = time()
+        delta = now - start_time
+        if delta > args.time:
+            break
+    
+    # Calculate mean and standard deviation of latency.
+    mean = helper.avg(times)
+    stddev = helper.stdev(times)
+    return [mean, stdev]
 
 def bufferbloat():
     if not os.path.exists(args.dir):
