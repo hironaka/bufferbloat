@@ -150,6 +150,7 @@ def get_latency_stats(net):
         cmd = "curl -o index.html -s -w %%{time_total} %s/http/index.html > %s" % (server.IP(), output)
         print cmd
         client.popen(cmd, shell=True)
+        sleep(1)
         f = open(output)
         lines = f.readlines()
         time_total = float(lines[0])
