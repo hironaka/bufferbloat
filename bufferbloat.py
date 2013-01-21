@@ -155,7 +155,7 @@ def get_latency_stats(net):
         print cmd
         p = client.popen(cmd, shell=True, stdout=PIPE)
         print p.stdout
-        time_total = float(p.stdout)
+        time_total = float(p.stdout.read())
         print time_total
         times.append(time_total)
         
