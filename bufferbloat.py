@@ -139,6 +139,7 @@ def start_ping(net, outfile='ping.txt'):
                     shell=True)
 
 def get_latency_stats(net):
+    print "Capturing latency..."
 		server = net.getNodeByName('h1')
 		client = net.getNodeByName('h2')
 		times = []
