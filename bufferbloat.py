@@ -105,8 +105,7 @@ def stop_tcpprobe():
 
 def start_qmon(iface, interval_sec=0.1, outfile="q.txt"):
 		print "Starting qmon..."
-    monitor = Process(target=monitor_qlen,
-                      args=(iface, interval_sec, outfile))
+    monitor = Process(target=monitor_qlen, args=(iface, interval_sec, outfile))
     monitor.start()
     return monitor
 
