@@ -123,10 +123,10 @@ def start_iperf(net):
 
 def start_webserver(net):
 		print "Starting webserver..."
-    h1 = net.getNodeByName('h1')
-    proc = h1.popen("python http/webserver.py", shell=True)
-    sleep(1)
-    return [proc]
+		h1 = net.getNodeByName('h1')
+		proc = h1.popen("python http/webserver.py", shell=True)
+		sleep(1)
+		return [proc]
 
 def start_ping(net, outfile='ping.txt'):
 		# Start a ping train from h1 to h2 (or h2 to h1, does it
@@ -142,20 +142,18 @@ def get_latency_stats(net):
 		server = net.getNodeByName('h1')
 		client = net.getNodeByName('h2')
 		times = []
-    start_time = time()
-    while True:
-    		# Calculate the amount of time to transfer webpage. TODO: update 
-				start = time()
-    		client.popen("curl -o /dev/null -s -w %{time_total} google.com")
-    		end = time()
-    		times.append(end - start)
-    		
-    		# Break out of loop after enough time has elapsed. 
-        sleep(5)
-        now = time()
-        delta = now - start_time
-        if delta > args.time:
-            break
+		start_time = time()
+		while True:
+		    # Calculate the amount of time to transfer webpage. TODO: update 
+		    client.popen("curl -o /dev/null -s -w %{time_total} google.com")
+		    times.append(time_total)
+		    
+		    # Break out of loop after enough time has elapsed. 
+		    sleep(5)
+		    now = time()
+		    delta = now - start_time
+		    if delta > args.time:
+		        break
 		
 		# Calculate mean and standard deviation of latency.
 		mean = helper.avg(times)
