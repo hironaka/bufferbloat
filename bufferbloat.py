@@ -146,7 +146,13 @@ def get_latency_stats(net):
     start_time = time()
     while True:
         # Calculate the amount of time to transfer webpage. TODO: update 
-        client.popen("curl -o /dev/null -s -w %{time_total} google.com")
+        output = "latency.txt"
+        client.popen("curl -o index.html -s -w %{time_total} %s/http/index.html > %s" % (client.IP(), output), shell=True)
+        f = open(output)
+        lines = f.readlines()
+        time_total = float(lines[0])
+        f.close()
+        print time_total
         times.append(time_total)
         
         # Break out of loop after enough time has elapsed. 
