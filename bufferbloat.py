@@ -124,6 +124,7 @@ def start_iperf(net):
     cmd = "iperf -c %s -t %d" % (h2.IP(), args.time)
     print cmd
     client = h1.popen(cmd)
+    print "End iperf"
 
 def start_webserver(net):
 		print "Starting webserver..."
