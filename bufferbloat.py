@@ -73,13 +73,23 @@ class BBTopo(Topo):
     def __init__(self, n=2):
         super(BBTopo, self).__init__()
 
-        # TODO: create two hosts
+        # Create two hosts.
+        host1 = self.addHost('h1')
+        host2 = self.addHost('h2')
 
         # Here I have created a switch.  If you change its name, its
         # interface names will change from s0-eth1 to newname-eth1.
-        self.addSwitch('s0')
+        switch = self.addSwitch('s0')
 
-        # TODO: Add links with appropriate characteristics
+        # Add link from host 1 (home computer) to router with 1Gb/s bandwidth, 5ms delay 
+        # (RTT is 20ms), and buffer size of 100 full sized ethernet frames.
+        linkopts = dict(bw=1000, delay='5ms', max_queue_size=100)
+        self.addLink(host1, switch, **linkopts)
+        
+        # Add link from host 2 with 1.5Mb/s bandwidth, 5ms delay (RTT is 20ms), and 
+        # buffer size of 100 full sized ethernet frames.
+        linkopts['bw'] = 1.5
+        self.addLink(host2, switch, **linkopts)
         return
 
 # Simple wrappers around monitoring utilities.  You are welcome to
