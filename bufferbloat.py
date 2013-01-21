@@ -79,16 +79,16 @@ class BBTopo(Topo):
         # interface names will change from s0-eth1 to newname-eth1.
         switch = self.addSwitch('s0')
 
-        # Create link options.
+        # Create link options dictionary.
         linkopts = dict(bw=args.bw_host, 
-                        delay='%.1fms' % (args.delay), 
-                        max_queue_size=args.maxq)
+                        delay='%.1fms' % (args.delay))
                         
         # Add link from host 1 (home computer) to router.
         self.addLink(host1, switch, **linkopts)
         
-        # Add link from host 2 to router.
+        # Add link from host 2 to router. Bottleneck link.
         linkopts['bw'] = args.bw_net
+        linkopts['max_queue_size'] = args.maxq
         self.addLink(host2, switch, **linkopts)
         return
 
@@ -113,13 +113,17 @@ def start_iperf(net):
 		# Start iperf server.
     h2 = net.getNodeByName('h2')
     print "Starting iperf server..."
-    server = h2.popen("iperf -s -w 16m")
+    cmd = "iperf -s -w 16m"
+    print cmd
+    server = h2.popen(cmd)
     
     # Start the iperf client on h1.  Ensure that you create a
     # long lived TCP flow.
     h1 = net.getNodeByName('h1')
     print "Starting iperf client..."
-    client = h1.popen("iperf -c %s -t %d" % (h2.IP(), args.time))
+    cmd = "iperf -c %s -t %d" % (h2.IP(), args.time)
+    print cmd
+    client = h1.popen(cmd)
 
 def start_webserver(net):
 		print "Starting webserver..."
@@ -135,8 +139,9 @@ def start_ping(net, outfile='ping.txt'):
     print "Starting ping train..."
     h1 = net.getNodeByName('h1')
     h2 = net.getNodeByName('h2')
-    ping = h1.popen("ping -i .1 -w %d %s > %s/%s" % (args.time, h2.IP(), args.dir, outfile), 
-                    shell=True)
+    cmd = "ping -i .1 -w %d %s > %s/%s" % (args.time, h2.IP(), args.dir, outfile)
+    print cmd
+    ping = h1.popen(cmd, shell=True)
 
 def get_latency_stats(net):
     print "Capturing latency..."
@@ -145,16 +150,12 @@ def get_latency_stats(net):
     times = []
     start_time = time()
     while True:
-        # Calculate the amount of time to transfer webpage. TODO: update 
-        output = "latency.txt"
-        cmd = "curl -o index.html -s -w %%{time_total} %s/http/index.html > %s" % (server.IP(), output)
+        # Calculate the amount of time to transfer webpage.
+        cmd = "curl -o index.html -s -w %%{time_total} %s/http/index.html" % (server.IP())
         print cmd
-        client.popen(cmd, shell=True)
-        sleep(1)
-        f = open(output)
-        lines = f.readlines()
-        time_total = float(lines[0])
-        f.close()
+        p = client.popen(cmd, shell=True, stdout=PIPE)
+        print p.stdout
+        time_total = float(p.stdout)
         print time_total
         times.append(time_total)
         
