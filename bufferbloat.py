@@ -49,7 +49,7 @@ parser.add_argument('--time', '-t',
                     type=int,
                     default=10)
 
-parser.add_argument('--maxq',
+parser.add_argument('--maxq', '-q',
                     type=int,
                     help="Max buffer size of network interface in packets",
                     default=100)
