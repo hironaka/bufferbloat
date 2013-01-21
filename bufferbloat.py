@@ -80,7 +80,7 @@ class BBTopo(Topo):
         switch = self.addSwitch('s0')
 
         # Create link options.
-        linkopts = dict(bw=args.bw-host, 
+        linkopts = dict(bw=args.bw_host, 
                         delay='%.1fms' % (args.delay), 
                         max_queue_size=args.maxq)
                         
@@ -88,7 +88,7 @@ class BBTopo(Topo):
         self.addLink(host1, switch, **linkopts)
         
         # Add link from host 2 to router.
-        linkopts['bw'] = args.bw-net
+        linkopts['bw'] = args.bw_net
         self.addLink(host2, switch, **linkopts)
         return
 
