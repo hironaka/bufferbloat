@@ -154,9 +154,7 @@ def get_latency_stats(net):
         cmd = "curl -o index.html -s -w %%{time_total} %s/http/index.html" % (server.IP())
         print cmd
         p = client.popen(cmd, shell=True, stdout=PIPE)
-        print p.stdout
         time_total = float(p.stdout.read())
-        print time_total
         times.append(time_total)
         
         # Break out of loop after enough time has elapsed. 
@@ -168,7 +166,7 @@ def get_latency_stats(net):
     
     # Calculate mean and standard deviation of latency.
     mean = helper.avg(times)
-    stddev = helper.stdev(times)
+    stdev = helper.stdev(times)
     return [mean, stdev]
 
 def bufferbloat():
