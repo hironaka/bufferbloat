@@ -22,9 +22,7 @@ import sys
 import os
 import math
 
-# TODO: Don't just read the TODO sections in this code.  Remember that
-# one of the goals of this assignment is for you to learn how to use
-# Mininet. :-)
+import helper
 
 parser = ArgumentParser(description="Bufferbloat tests")
 parser.add_argument('--bw-host', '-B',
@@ -37,7 +35,7 @@ parser.add_argument('--bw-net', '-b',
                     help="Bandwidth of bottleneck (network) link (Mb/s)",
                     required=True)
 
-parser.add_argument('--delay',
+parser.add_argument('--delay', '-D',
                     type=float,
                     help="Link propagation delay (ms)",
                     required=True)
@@ -81,14 +79,16 @@ class BBTopo(Topo):
         # interface names will change from s0-eth1 to newname-eth1.
         switch = self.addSwitch('s0')
 
-        # Add link from host 1 (home computer) to router with 1Gb/s bandwidth, 5ms delay 
-        # (RTT is 20ms), and buffer size of 100 full sized ethernet frames.
-        linkopts = dict(bw=1000, delay='5ms', max_queue_size=100)
+        # Create link options.
+        linkopts = dict(bw=args.bw-host, 
+                        delay='%.1fms' % (args.delay), 
+                        max_queue_size=args.maxq)
+                        
+        # Add link from host 1 (home computer) to router.
         self.addLink(host1, switch, **linkopts)
         
-        # Add link from host 2 with 1.5Mb/s bandwidth, 5ms delay (RTT is 20ms), and 
-        # buffer size of 100 full sized ethernet frames.
-        linkopts['bw'] = 1.5
+        # Add link from host 2 to router.
+        linkopts['bw'] = args.bw-net
         self.addLink(host2, switch, **linkopts)
         return
 
@@ -104,36 +104,64 @@ def stop_tcpprobe():
     Popen("killall -9 cat", shell=True).wait()
 
 def start_qmon(iface, interval_sec=0.1, outfile="q.txt"):
+		print "Starting qmon..."
     monitor = Process(target=monitor_qlen,
                       args=(iface, interval_sec, outfile))
     monitor.start()
     return monitor
 
 def start_iperf(net):
+		# Start iperf server.
     h2 = net.getNodeByName('h2')
     print "Starting iperf server..."
-    # For those who are curious about the -w 16m parameter, it ensures
-    # that the TCP flow is not receiver window limited.  If it is,
-    # there is a chance that the router buffer may not get filled up.
     server = h2.popen("iperf -s -w 16m")
-    # TODO: Start the iperf client on h1.  Ensure that you create a
+    
+    # Start the iperf client on h1.  Ensure that you create a
     # long lived TCP flow.
+    h1 = net.getNodeByName('h1')
+    print "Starting iperf client..."
+    client = h1.popen("iperf -c %s -t %d" % (h2.IP(), args.time))
 
 def start_webserver(net):
+		print "Starting webserver..."
     h1 = net.getNodeByName('h1')
     proc = h1.popen("python http/webserver.py", shell=True)
     sleep(1)
     return [proc]
 
-def start_ping(net):
-    # TODO: Start a ping train from h1 to h2 (or h2 to h1, does it
+def start_ping(net, outfile='ping.txt'):
+		# Start a ping train from h1 to h2 (or h2 to h1, does it
     # matter?)  Measure RTTs every 0.1 second.  Read the ping man page
     # to see how to do this.
+    print "Starting ping train..."
+    h1 = net.getNodeByName('h1')
+    h2 = net.getNodeByName('h2')
+    ping = h1.popen("ping -i .1 -w %d %s > %s/%s" % (args.time, h2.IP(), args.dir, outfile), 
+                    shell=True)
 
-    # Hint: Use host.popen(cmd, shell=True).  If you pass shell=True
-    # to popen, you can redirect cmd's output using shell syntax.
-    # i.e. ping ... > /path/to/ping.
-
+def get_latency_stats(net):
+		server = net.getNodeByName('h1')
+		client = net.getNodeByName('h2')
+		times = []
+    start_time = time()
+    while True:
+    		# Calculate the amount of time to transfer webpage. TODO: update 
+				start = time()
+    		client.popen("curl -o /dev/null -s -w %{time_total} google.com")
+    		end = time()
+    		times.append(end - start)
+    		
+    		# Break out of loop after enough time has elapsed. 
+        sleep(5)
+        now = time()
+        delta = now - start_time
+        if delta > args.time:
+            break
+		
+		# Calculate mean and standard deviation of latency.
+		mean = helper.avg(times)
+		stddev = helper.stdev(times)
+		return [mean, stdev]
 
 def bufferbloat():
     if not os.path.exists(args.dir):
@@ -142,16 +170,18 @@ def bufferbloat():
     topo = BBTopo()
     net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()
+    
     # This dumps the topology and how nodes are interconnected through
     # links.
     dumpNodeConnections(net.hosts)
+    
     # This performs a basic all pairs ping test.
     net.pingAll()
 
     # Start all the monitoring processes
     start_tcpprobe("cwnd.txt")
 
-    # TODO: Start monitoring the queue sizes.  Since the switch I
+    # Start monitoring the queue sizes.  Since the switch I
     # created is "s0", I monitor one of the interfaces.  Which
     # interface?  The interface numbering starts with 1 and increases.
     # Depending on the order you add links to your network, this
@@ -159,30 +189,19 @@ def bufferbloat():
     qmon = start_qmon(iface='s0-eth2',
                       outfile='%s/q.txt' % (args.dir))
 
-    # TODO: Start iperf, webservers, etc.
-    # start_iperf(net)
+    # Start iperf, webservers, etc.
+    start_iperf(net)
+    start_ping(net)
+    start_webserver(net)
 
     # TODO: measure the time it takes to complete webpage transfer
     # from h1 to h2 (say) 3 times.  Hint: check what the following
     # command does: curl -o /dev/null -s -w %{time_total} google.com
     # Now use the curl command to fetch webpage from the webserver you
     # spawned on host h1 (not from google!)
-
-    # Hint: have a separate function to do this and you may find the
-    # loop below useful.
-    start_time = time()
-    while True:
-        # do the measurement (say) 3 times.
-        sleep(5)
-        now = time()
-        delta = now - start_time
-        if delta > args.time:
-            break
-        print "%.1fs left..." % (args.time - delta)
-
-    # TODO: compute average (and standard deviation) of the fetch
-    # times.  You don't need to plot them.  Just note it in your
-    # README and explain.
+    mean, stdev = get_latency_stats(net)
+    print "Mean latency: " + mean
+    print "Standard deviation of latency: " + stdev
 
     # Hint: The command below invokes a CLI which you can use to
     # debug.  It allows you to run arbitrary commands inside your
